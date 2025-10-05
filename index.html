@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KOSTYA: The Final Exhibit</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- GSAP для более плавных анимаций -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
@@ -21,8 +23,6 @@
             font-family: 'Manrope', sans-serif;
             background-color: var(--background);
             color: var(--text-primary);
-            cursor: none;
-            overflow: auto; /* Отключаем скролл до загрузки */
             overflow-x: hidden;
         }
 
@@ -40,12 +40,27 @@
             z-index: -1;
             animation: pan 120s linear infinite;
         }
+
         @keyframes pan {
             0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, -100%); }
+            100% { transform: translate(-50%, -50%); } /* Уменьшил, чтобы движение было менее резким */
         }
 
         /* --- КАСТОМНЫЙ КУРСОР --- */
+        /* Скрываем курсор на устройствах с сенсорным вводом */
+        @media (pointer: coarse) {
+            .cursor, .cursor-dot {
+                display: none !important;
+            }
+        }
+        
+        /* Для устройств с указателем (мышь) */
+        @media (pointer: fine) {
+            body {
+                cursor: none;
+            }
+        }
+
         .cursor {
             position: fixed;
             width: 40px;
@@ -54,7 +69,6 @@
             border-radius: 50%;
             pointer-events: none;
             transform: translate(-50%, -50%);
-            transition: width 0.4s ease, height 0.4s ease, background-color 0.4s ease, border-color 0.4s ease;
             z-index: 9999;
             mix-blend-mode: difference;
             display: flex;
@@ -63,13 +77,20 @@
             font-size: 10px;
             color: #000;
             font-weight: 700;
+            /* Убрал transition отсюда, будет управляться GSAP */
         }
-        .cursor.hover-img {
-            width: 80px;
-            height: 80px;
-            background-color: var(--text-primary);
-            border-color: transparent;
+
+        .cursor-text {
+            opacity: 0;
+            transform: scale(0.5);
+            transition: opacity 0.4s ease, transform 0.4s ease;
         }
+
+        .cursor.hover-img .cursor-text {
+             opacity: 1;
+             transform: scale(1);
+        }
+
         .cursor-dot {
             position: fixed;
             width: 6px;
@@ -86,21 +107,25 @@
         .hero-title { font-size: clamp(4rem, 15vw, 14rem); line-height: 0.9; }
         .section-title { font-size: clamp(3rem, 10vw, 8rem); line-height: 1; }
         .line-parent { overflow: hidden; }
-        .line-child { transform: translateY(110%); transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1); }
-        .visible .line-child { transform: translateY(0); }
+        .line-child {
+            transform: translateY(110%);
+            transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .visible .line-child {
+            transform: translateY(0);
+        }
 
         /* --- ГАЛЕРЕЯ --- */
         .gallery-item {
             overflow: hidden;
             border-radius: 0.5rem;
+            cursor: pointer; /* Указываем, что на элемент можно нажать */
         }
         .gallery-item img {
             transition: transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .gallery-item:hover img {
-            transform: scale(1.05);
-        }
-
+        /* Убрал :hover, так как у нас есть курсор */
+        
         /* --- АНИМАЦИИ --- */
         .reveal {
             opacity: 0;
@@ -114,12 +139,65 @@
             transform: translateY(0);
         }
 
+        /* --- LIGHTBOX (Просмотр изображений) --- */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        .lightbox.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .lightbox img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transform: scale(0.9);
+            transition: transform 0.5s ease;
+        }
+        .lightbox.show img {
+             transform: scale(1);
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            font-size: 2.5rem;
+            color: white;
+            cursor: pointer;
+            line-height: 1;
+        }
     </style>
 </head>
 <body class="antialiased">
     <div id="page-background"></div>
-    <div class="cursor"></div>
+    <!-- Кастомный курсор -->
+    <div class="cursor"><span class="cursor-text">VIEW</span></div>
     <div class="cursor-dot"></div>
+
+    <!-- Lightbox для изображений -->
+    <div id="lightbox" class="lightbox">
+        <span id="lightbox-close" class="lightbox-close">&times;</span>
+        <img id="lightbox-image" src="" alt="Просмотр изображения">
+    </div>
+
+    <!-- Контейнер для скримера -->
+    <div id="screamer" class="fixed top-0 left-0 w-full h-full bg-black z-[99999] justify-center items-center" style="display: none;">
+        <img id="screamer-image" src="https://i.imgur.com/nKq0oFo.jpg" alt="Screamer" class="max-w-full max-h-full object-contain">
+        <audio id="screamer-audio" src="https://klopec.ru/sounds/2023-08/sound_70957.mp3" preload="auto"></audio>
+    </div>
 
     <main class="relative z-10">
         <!-- HERO СЕКЦИЯ -->
@@ -134,7 +212,7 @@
         <section class="py-32 px-6">
             <div class="max-w-5xl mx-auto">
                 <p class="text-3xl sm:text-4xl md:text-5xl leading-tight font-light text-gray-300">
-                    <span class="reveal">Это не просто коллекция изображений. Это исследование. Попытка каталогизировать моменты, когда обыденность уступает место необъяснимому.</span> 
+                    <span class="reveal">Это не просто коллекция изображений. Это исследование. Попытка каталогизировать моменты, когда обыденность уступает место необъяснимому.</span>
                     <span class="reveal text-gray-500" style="transition-delay: 0.2s;">Каждый экспонат — это точка данных в обширном исследовании человеческой уникальности.</span>
                 </p>
             </div>
@@ -143,6 +221,7 @@
         <!-- ГАЛЕРЕЯ -->
         <section id="gallery" class="py-32 px-6 container mx-auto">
             <div class="columns-2 md:columns-3 lg:columns-4 gap-4 sm:gap-6 space-y-4 sm:space-y-6">
+                <!-- Старые изображения -->
                 <div class="reveal gallery-item break-inside-avoid"><img src="https://i.imgur.com/ECuNyK9.jpg" alt="Экспонат"></div>
                 <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.1s;"><img src="https://i.imgur.com/l5Yx2DJ.jpg" alt="Экспонат"></div>
                 <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.2s;"><img src="https://i.imgur.com/67cTheC.jpg" alt="Экспонат"></div>
@@ -153,75 +232,188 @@
                 <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.2s;"><img src="https://i.imgur.com/7hEpzuW.jpg" alt="Экспонат"></div>
                 <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.05s;"><img src="https://i.imgur.com/sh8lLug.jpg" alt="Экспонат"></div>
                 <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.15s;"><img src="https://i.imgur.com/ECuNyK9.jpg" alt="Экспонат"></div>
+                
+                <!-- Новые добавленные изображения -->
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.1s;"><img src="https://i.imgur.com/4rdlXau.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.15s;"><img src="https://i.imgur.com/DFEPyqF.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.2s;"><img src="https://i.imgur.com/UTU2bIW.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.25s;"><img src="https://i.imgur.com/HTvVnZ5.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.05s;"><img src="https://i.imgur.com/ZOFlaIx.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.1s;"><img src="https://i.imgur.com/toqgWeg.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.15s;"><img src="https://i.imgur.com/vwoxXyt.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.2s;"><img src="https://i.imgur.com/oJNLEvX.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.25s;"><img src="https://i.imgur.com/xK6TOCG.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.05s;"><img src="https://i.imgur.com/wOEBM2h.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.1s;"><img src="https://i.imgur.com/jDozMFF.jpg" alt="Экспонат"></div>
             </div>
         </section>
-    
 
-    <footer class="text-center py-12 border-t border-gray-900">
-        <p class="text-gray-700">Проект K-001 / Все данные заархивированы</p>
-    </footer>
+        <footer class="text-center py-12 border-t border-gray-900">
+            <p class="text-gray-700">Проект K-001 / Все данные заархивированы</p>
+        </footer>
+    </main>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const cursor = document.querySelector('.cursor');
-            const cursorDot = document.querySelector('.cursor-dot');
-            const interactable = document.querySelectorAll('.gallery-item');
-            const body = document.body;
 
-            // --- ПЛАВНЫЙ КУРСОР ---
-            let mouseX = 0, mouseY = 0;
-            let cursorX = 0, cursorY = 0;
-            let dotX = 0, dotY = 0;
-            const speed = 0.15;
+            // --- ИНИЦИАЛИЗАЦИЯ КАСТОМНОГО КУРСОР ---
+            function initCursor() {
+                const cursor = document.querySelector('.cursor');
+                const cursorDot = document.querySelector('.cursor-dot');
+                const galleryItems = document.querySelectorAll('.gallery-item');
 
-            document.addEventListener('mousemove', (e) => {
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-            });
-            
-            const animateCursor = () => {
-                cursorX += (mouseX - cursorX) * speed;
-                cursorY += (mouseY - cursorY) * speed;
-                dotX += (mouseX - dotX) * (speed * 1.5);
-                dotY += (mouseY - dotY) * (speed * 1.5);
-                
-                cursor.style.transform = `translate3d(${cursorX - 20}px, ${cursorY - 20}px, 0)`;
-                cursorDot.style.transform = `translate3d(${dotX - 3}px, ${dotY - 3}px, 0)`;
+                let mouseX = 0;
+                let mouseY = 0;
 
-                requestAnimationFrame(animateCursor);
-            };
-            animateCursor();
+                // Устанавливаем начальные позиции с помощью GSAP
+                gsap.set(cursor, { xPercent: -50, yPercent: -50 });
+                gsap.set(cursorDot, { xPercent: -50, yPercent: -50 });
 
-            interactable.forEach(el => {
-                el.addEventListener('mouseenter', () => {
-                    cursor.classList.add('hover-img');
-                    cursor.textContent = "VIEW";
+                window.addEventListener('mousemove', e => {
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
+                    // Плавное движение курсора с помощью GSAP
+                    gsap.to(cursor, 0.4, { x: mouseX, y: mouseY, ease: "power2.out" });
+                    gsap.to(cursorDot, 0.2, { x: mouseX, y: mouseY, ease: "power2.out" });
                 });
-                el.addEventListener('mouseleave', () => {
-                    cursor.classList.remove('hover-img');
-                    cursor.textContent = "";
+
+                galleryItems.forEach(el => {
+                    el.addEventListener('mouseenter', () => {
+                        cursor.classList.add('hover-img');
+                        // Анимация увеличения курсора
+                        gsap.to(cursor, 0.4, {
+                            width: 80,
+                            height: 80,
+                            backgroundColor: 'var(--text-primary)',
+                            borderColor: 'transparent',
+                            ease: "power3.out"
+                        });
+                    });
+                    el.addEventListener('mouseleave', () => {
+                        cursor.classList.remove('hover-img');
+                        // Анимация возврата курсора в исходное состояние
+                         gsap.to(cursor, 0.4, {
+                            width: 40,
+                            height: 40,
+                            backgroundColor: 'transparent',
+                            borderColor: 'var(--text-primary)',
+                            ease: "power3.out"
+                        });
+                    });
                 });
-            });
+            }
 
-            // Запускаем анимацию заголовка при загрузке
-            document.querySelectorAll('.hero-title .line-parent').forEach(el => el.classList.add('visible'));
 
-            // --- АНИМАЦИИ ПРИ СКРОЛЛЕ ---
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('visible');
+            // --- ИНИЦИАЛИЗАЦИЯ LIGHTBOX ---
+            function initLightbox() {
+                const lightbox = document.getElementById('lightbox');
+                const lightboxImage = document.getElementById('lightbox-image');
+                const lightboxClose = document.getElementById('lightbox-close');
+                const galleryImages = document.querySelectorAll('.gallery-item img');
+
+                galleryImages.forEach(img => {
+                    img.parentElement.addEventListener('click', () => {
+                        const src = img.getAttribute('src');
+                        lightboxImage.setAttribute('src', src);
+                        lightbox.classList.add('show');
+                        // Блокируем скролл фона
+                        document.body.style.overflow = 'hidden';
+                    });
+                });
+
+                const closeLightbox = () => {
+                    lightbox.classList.remove('show');
+                    // Возвращаем скролл
+                    document.body.style.overflow = '';
+                };
+
+                lightboxClose.addEventListener('click', closeLightbox);
+                lightbox.addEventListener('click', (e) => {
+                    // Закрываем только если клик был по фону, а не по изображению
+                    if (e.target === lightbox) {
+                        closeLightbox();
                     }
                 });
-            }, { threshold: 0.1 });
 
-            document.querySelectorAll('.reveal, .section-title .line-parent, .text-3xl .reveal').forEach(el => {
-                observer.observe(el);
-            });
+                // Закрытие по клавише Escape
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+                        closeLightbox();
+                    }
+                });
+            }
+            
+            // --- ФУНКЦИОНАЛ СКРИМЕРА ---
+            function initScreamer() {
+                const screamerContainer = document.getElementById('screamer');
+                const screamerAudio = document.getElementById('screamer-audio');
+
+                if (!screamerContainer || !screamerAudio) {
+                    console.error("Элементы для скримера не найдены!");
+                    return;
+                }
+
+                // Устанавливаем скорость воспроизведения звука в 3 раза быстрее
+                screamerAudio.playbackRate = 3.0;
+
+                const triggerScreamer = () => {
+                    screamerContainer.style.display = 'flex';
+                    screamerAudio.currentTime = 0;
+                    screamerAudio.play().catch(error => {
+                        // Автовоспроизедение может быть заблокировано, это нормально
+                        console.log("Не удалось воспроизвести звук скримера:", error);
+                    });
+
+                    // Прячем скример через 0.3 секунды
+                    setTimeout(() => {
+                        screamerContainer.style.display = 'none';
+                        screamerAudio.pause();
+                    }, 300);
+                };
+
+                const scheduleScreamer = () => {
+                    // Случайная задержка от 45 до 120 секунд
+                    const randomDelay = Math.random() * 5000 + 5000;
+
+                    setTimeout(() => {
+                        // Дополнительный шанс 20% на срабатывание, чтобы сделать его еще реже
+                        if (Math.random() < 1) {
+                            triggerScreamer();
+                        }
+                        // Запланировать следующий вызов в любом случае
+                        scheduleScreamer();
+                    }, randomDelay);
+                };
+
+                // Запускаем планировщик после начальной задержки в 20 секунд
+                setTimeout(scheduleScreamer, 20000);
+            }
+
+
+            // --- ИНИЦИАЛИЗАЦИЯ АНИМАЦИЙ ПРИ СКРОЛЛЕ ---
+            function initScrollAnimations() {
+                // Запускаем анимацию заголовка при загрузке
+                document.querySelectorAll('.hero-title .line-parent').forEach(el => el.classList.add('visible'));
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                        }
+                    });
+                }, { threshold: 0.1 });
+
+                document.querySelectorAll('.reveal').forEach(el => {
+                    observer.observe(el);
+                });
+            }
+
+            // --- ЗАПУСК ВСЕХ ФУНКЦИЙ ---
+            initCursor();
+            initLightbox();
+            initScrollAnimations();
+            initScreamer(); // Запускаем скример
         });
     </script>
 </body>
 </html>
-
-
-
