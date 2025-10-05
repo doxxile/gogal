@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KOSTYA: The Final Exhibit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background: #000000;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --grid-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- БАЗОВЫЕ СТИЛИ --- */
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            cursor: none;
+            overflow: auto; /* Отключаем скролл до загрузки */
+            overflow-x: hidden;
+        }
+
+        /* --- ФОН С СЕТКОЙ --- */
+        #page-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background-image:
+                linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: -1;
+            animation: pan 120s linear infinite;
+        }
+        @keyframes pan {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, -100%); }
+        }
+
+        /* --- КАСТОМНЫЙ КУРСОР --- */
+        .cursor {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--text-primary);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: width 0.4s ease, height 0.4s ease, background-color 0.4s ease, border-color 0.4s ease;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            color: #000;
+            font-weight: 700;
+        }
+        .cursor.hover-img {
+            width: 80px;
+            height: 80px;
+            background-color: var(--text-primary);
+            border-color: transparent;
+        }
+        .cursor-dot {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            background-color: var(--text-primary);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 9998;
+        }
+
+        /* --- ТИПОГРАФИКА --- */
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .hero-title { font-size: clamp(4rem, 15vw, 14rem); line-height: 0.9; }
+        .section-title { font-size: clamp(3rem, 10vw, 8rem); line-height: 1; }
+        .line-parent { overflow: hidden; }
+        .line-child { transform: translateY(110%); transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1); }
+        .visible .line-child { transform: translateY(0); }
+
+        /* --- ГАЛЕРЕЯ --- */
+        .gallery-item {
+            overflow: hidden;
+            border-radius: 0.5rem;
+        }
+        .gallery-item img {
+            transition: transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+
+        /* --- АНИМАЦИИ --- */
+        .reveal {
+            opacity: 0;
+            filter: blur(10px);
+            transform: translateY(30px);
+            transition: opacity 1.5s cubic-bezier(0.16, 1, 0.3, 1), filter 1.5s cubic-bezier(0.16, 1, 0.3, 1), transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            filter: blur(0);
+            transform: translateY(0);
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+    <div id="page-background"></div>
+    <div class="cursor"></div>
+    <div class="cursor-dot"></div>
+
+    <main class="relative z-10">
+        <!-- HERO СЕКЦИЯ -->
+        <section class="min-h-screen w-full flex flex-col items-center justify-center p-6">
+            <h1 class="font-serif hero-title text-center">
+                <span class="line-parent block"><span class="line-child block">KOSTYA</span></span>
+                <span class="line-parent block"><span class="line-child block" style="transition-delay: 0.1s;">ARCHIVE</span></span>
+            </h1>
+        </section>
+
+        <!-- ВСТУПЛЕНИЕ -->
+        <section class="py-32 px-6">
+            <div class="max-w-5xl mx-auto">
+                <p class="text-3xl sm:text-4xl md:text-5xl leading-tight font-light text-gray-300">
+                    <span class="reveal">Это не просто коллекция изображений. Это исследование. Попытка каталогизировать моменты, когда обыденность уступает место необъяснимому.</span> 
+                    <span class="reveal text-gray-500" style="transition-delay: 0.2s;">Каждый экспонат — это точка данных в обширном исследовании человеческой уникальности.</span>
+                </p>
+            </div>
+        </section>
+
+        <!-- ГАЛЕРЕЯ -->
+        <section id="gallery" class="py-32 px-6 container mx-auto">
+            <div class="columns-2 md:columns-3 lg:columns-4 gap-4 sm:gap-6 space-y-4 sm:space-y-6">
+                <div class="reveal gallery-item break-inside-avoid"><img src="https://i.imgur.com/ECuNyK9.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.1s;"><img src="https://i.imgur.com/l5Yx2DJ.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.2s;"><img src="https://i.imgur.com/67cTheC.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.05s;"><img src="https://i.imgur.com/DTbl2PQ.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.15s;"><img src="https://i.imgur.com/8YdwhrW.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.25s;"><img src="https://i.imgur.com/Rx5W6JF.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.1s;"><img src="https://i.imgur.com/nKq0oFo.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.2s;"><img src="https://i.imgur.com/7hEpzuW.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.05s;"><img src="https://i.imgur.com/sh8lLug.jpg" alt="Экспонат"></div>
+                <div class="reveal gallery-item break-inside-avoid" style="transition-delay: 0.15s;"><img src="https://i.imgur.com/ECuNyK9.jpg" alt="Экспонат"></div>
+            </div>
+        </section>
+        
+        <!-- ЗАКЛЮЧЕНИЕ -->
+        <section class="py-32 px-6 text-center">
+            <h2 class="font-serif section-title">
+                <span class="line-parent block"><span class="line-child block">Конец</span></span>
+                <span class="line-parent block"><span class="line-child block" style="transition-delay: 0.1s;">Передачи</span></span>
+            </h2>
+        </section>
+    </main>
+
+    <footer class="text-center py-12 border-t border-gray-900">
+        <p class="text-gray-700">Проект K-001 / Все данные заархивированы</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cursor = document.querySelector('.cursor');
+            const cursorDot = document.querySelector('.cursor-dot');
+            const interactable = document.querySelectorAll('.gallery-item');
+            const body = document.body;
+
+            // --- ПЛАВНЫЙ КУРСОР ---
+            let mouseX = 0, mouseY = 0;
+            let cursorX = 0, cursorY = 0;
+            let dotX = 0, dotY = 0;
+            const speed = 0.15;
+
+            document.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+            
+            const animateCursor = () => {
+                cursorX += (mouseX - cursorX) * speed;
+                cursorY += (mouseY - cursorY) * speed;
+                dotX += (mouseX - dotX) * (speed * 1.5);
+                dotY += (mouseY - dotY) * (speed * 1.5);
+                
+                cursor.style.transform = `translate3d(${cursorX - 20}px, ${cursorY - 20}px, 0)`;
+                cursorDot.style.transform = `translate3d(${dotX - 3}px, ${dotY - 3}px, 0)`;
+
+                requestAnimationFrame(animateCursor);
+            };
+            animateCursor();
+
+            interactable.forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    cursor.classList.add('hover-img');
+                    cursor.textContent = "VIEW";
+                });
+                el.addEventListener('mouseleave', () => {
+                    cursor.classList.remove('hover-img');
+                    cursor.textContent = "";
+                });
+            });
+
+            // Запускаем анимацию заголовка при загрузке
+            document.querySelectorAll('.hero-title .line-parent').forEach(el => el.classList.add('visible'));
+
+            // --- АНИМАЦИИ ПРИ СКРОЛЛЕ ---
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.reveal, .section-title .line-parent, .text-3xl .reveal').forEach(el => {
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
